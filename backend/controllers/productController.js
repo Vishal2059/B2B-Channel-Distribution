@@ -1,9 +1,18 @@
 import Product from '../models/Product.js';
 
-//  Create a new product 
+// Create a new product (With Cloudinary Image Support)
 export const createProduct = async (req, res) => {
   try {
     const { title, description, category, price, moq, stock } = req.body;
+
+    // Cloudinary se image URL req.file.path me milta hai, 
+    // ya phir direct link hone par req.body.imageUrl me hoga
+    const imageUrl = req.file ? req.file.path : req.body.imageUrl;
+
+    if (!imageUrl) {
+      return res.status(400).json({ message: 'Product image is required' });
+    }
+
     const product = new Product({
       brand: req.user._id,
       title,
@@ -11,7 +20,8 @@ export const createProduct = async (req, res) => {
       category,
       price,
       moq,
-      stock
+      stock,
+      imageUrl,
     });
 
     const createdProduct = await product.save();
@@ -24,7 +34,6 @@ export const createProduct = async (req, res) => {
 // Get all products catalog
 export const getProducts = async (req, res) => {
   try {
-    // populate('brand', 'name email') se brand ka Name aur Email bhi response me aayega
     const products = await Product.find().populate('brand', 'name email');
     res.json(products);
   } catch (error) {

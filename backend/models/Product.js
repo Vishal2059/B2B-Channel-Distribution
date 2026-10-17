@@ -32,7 +32,11 @@ const productSchema = new mongoose.Schema(
       type: Number, 
       required: true, 
       default: 0 // Available Stock
-    }
+    },
+    imageUrl: {
+    type: String,
+    required: true, 
+  },
   },
   { timestamps: true } 
 );
