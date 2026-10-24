@@ -1,5 +1,5 @@
 import express from 'express';
-import { addOrderItems, getMyOrders, updateOrderStatus, getAllOrders } from '../controllers/orderController.js';
+import { addOrderItems, getMyOrders, updateOrderStatus, getAllOrders, getBrandOrders } from '../controllers/orderController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { authorizeRoles } from '../middlewares/roleMiddleware.js';
 
@@ -10,6 +10,7 @@ router.route('/')
   .get(protect, authorizeRoles('Admin'), getAllOrders); 
 
 router.route('/myorders').get(protect, getMyOrders);
+router.route('/brand-orders').get(protect, authorizeRoles('Brand'), getBrandOrders);
 router.route('/:id/status').put(protect, authorizeRoles('Brand', 'Admin'), updateOrderStatus);
 
 export default router;

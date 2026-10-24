@@ -80,10 +80,25 @@ export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body; // New status (e.g., Processing, Delivered, Cancelled)
 
+    const allowed = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
+    if (status && !allowed.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
     const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Brand sirf wahi order badal sakta hai jisme uska product ho
+    if (req.user.role === 'Brand') {
+      const brandProducts = await Product.find({ brand: req.user._id }).select('_id');
+      const ids = brandProducts.map((p) => p._id.toString());
+      const owns = order.orderItems.some((i) => ids.includes(i.product.toString()));
+      if (!owns) {
+        return res.status(403).json({ message: 'Not allowed to update this order' });
+      }
     }
 
     order.status = status || order.status;
@@ -93,6 +108,40 @@ export const updateOrderStatus = async (req, res) => {
       message: 'Order status updated successfully',
       updatedOrder
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get orders received by the logged in brand (orders containing this brand's products)
+export const getBrandOrders = async (req, res) => {
+  try {
+    const myProducts = await Product.find({ brand: req.user._id }).select('_id');
+    const myIds = myProducts.map((p) => p._id.toString());
+
+    const orders = await Order.find({ 'orderItems.product': { $in: myProducts.map((p) => p._id) } })
+      .populate('distributor', 'name email')
+      .populate('orderItems.product', 'title price imageUrl')
+      .sort({ createdAt: -1 });
+
+    // Sirf is brand ke items rakho aur uska total nikalo
+    const result = orders.map((order) => {
+      const items = order.orderItems.filter(
+        (i) => i.product && myIds.includes(i.product._id.toString())
+      );
+      const brandTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+      return {
+        _id: order._id,
+        distributor: order.distributor,
+        orderItems: items,
+        brandTotal,
+        status: order.status,
+        shippingAddress: order.shippingAddress,
+        createdAt: order.createdAt,
+      };
+    });
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
