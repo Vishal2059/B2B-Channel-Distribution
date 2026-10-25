@@ -5,11 +5,11 @@ import Modal from "@/components/ui/Modal";
 import { Field, Select, Button } from "@/components/ui/Field";
 import { useAuth } from "@/context/AuthContext";
 
-export default function ApplyModal({ onClose }) {
+export default function ApplyModal({ onClose, defaultRole = ""  }) {
   const { signup } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ name: "", email: "", role: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ name: "", email: "", role: defaultRole, password: "", confirm: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
